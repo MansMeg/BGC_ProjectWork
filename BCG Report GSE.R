@@ -3,6 +3,8 @@
 # Modelling an influenza vaccination intervention using 
 # different modelling strategies
 
+
+
 # General stoschastic epidemic
 # Paramaters
 set.seed(20121006)
