@@ -5,13 +5,20 @@
 
 # General stoschastic epidemic
 # Paramaters
-n<-5000 # Population
+set.seed(20121006)
+n.c<-1
+n.all<-c(200,1000,5000)
+n<-n.all[n.c] # Population
+n.c<-n.c+1
+
 m<-5 # Initially infected
-lambda <- 1.5 # Lambda of Poisson process (no of contacts)
-gamma <- 2 # Gamma of Exp model of infection time
-vacc.ant <- 1000 # Number of vaccinated each time point 
-vacc.start.T <- 5
-vacc.int.T <- .1
+lambda <- 0.5 # Lambda of Poisson process (no of contacts)
+gamma <- 4.8 # Gamma of Exp model of infection time
+# vacc.ant <- 0 # Number of vaccinated each time point 
+ vacc.ant <- round(n*0.1) # Number of vaccinated each time point 
+
+vacc.start.T <- 10
+vacc.int.T <- 2
 
 # Create data
 sim.data<-data.frame(inf=rep(0,n),
@@ -37,7 +44,7 @@ while(sum(sim.data$inf>sim.data$rec)>0){
     
   # Vaccination
   if(min(sim.data[inf.no,3])>t.int && vacc.ant>0){
-                       to.vacc<-((vacc.nr-1)*vacc.ant+1):(vacc.nr*vacc.ant)
+  	to.vacc<-((vacc.nr-1)*vacc.ant+1):(vacc.nr*vacc.ant)
   	
   	sim.data[to.vacc,2]<-1
 
@@ -109,10 +116,18 @@ sim.data.aggr$V<-0
 for(i in 1:(vacc.nr-1)){
 	sim.data.aggr$V	[sim.data.aggr$time>vacc.start.T+(i-1)*vacc.int.T]<-i*vacc.ant}
 
+# Save the final results
+if(exists("sim.res")){sim.res<-rbind(sim.res,sim.data.aggr[dim(sim.data.aggr)[1],])
+                      }else{
+                        sim.res<-sim.data.aggr[dim(sim.data.aggr)[1],]
+                      }
+
 # Plot the results
+if(n.c==2){png(width=550,height=600);par(mfrow=c(3,1))}
 plot(sim.data.aggr$time,sim.data.aggr$S,type="l",col="Blue",ylim=c(0,n),ylab="Population size",xlab="Time")
-lines(x=sim.data.aggr$time,sim.data.aggr$I,col="Red")
+lines(x=sim.data.aggr$time,sim.data.aggr$I, col="Red")
 lines(x=sim.data.aggr$time,sim.data.aggr$R, col="Green")
 lines(x=sim.data.aggr$time,sim.data.aggr$V, col="Yellow")
+dev.off()
 
 
