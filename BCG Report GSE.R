@@ -4,6 +4,9 @@
 # different modelling strategies
 
 # General stoschastic epidemic
+
+source("BGC Report GSE functions.R")
+
 # Paramaters
 seed<-1917+0:2
 n.all<-c(200,1000,5000)
@@ -14,7 +17,7 @@ lambda <- 0.5 # Lambda of Poisson process (no of contacts)
 gamma <- 4.8 # Gamma of Exp model of infection time
 # Number of vaccinated each time point
 vacc.ant <- matrix(c(rep(0,3),rep(round(n.all*0.05),2)),nrow=3) 
-vacc.start.T <- c(0,0,10)
+vacc.start.T <- c(0,15,25)
 vacc.int.T <- rep(1,3)
 
 sim.res<-list();i<-1;j<-1
@@ -33,8 +36,8 @@ for (j in 1:3){
 }
 
 sim.no<-1000
-sim.peak.all<-list();i<-1;j<-1
-for (j in 1:3){
+sim.peak.all<-list();i<-1;j.length<-3;all.data<-list()
+for (j in 1:j.length){
   sim.peak<-list()
   for (i in 1:sim.no){
     print(c(j,i))
@@ -47,16 +50,17 @@ for (j in 1:3){
     max.no<-which(max(temp.data$I)==temp.data$I)[1]
     temp.data$cum.I<-temp.data$R[dim(temp.data)[1]]
     temp.data$max.T<-temp.data$time[dim(temp.data)[1]]
+    
     if(i==1){sim.peak<-temp.data[max.no,]}else{sim.peak<-rbind(sim.peak,temp.data[max.no,])}
+    if(i==1){all.data<-list(temp.data)}else{all.data<-c(all.data,list(temp.data))}
   }
   if(i==1){sim.peak.all<-list(sim.peak)}else{sim.peak.all<-c(sim.peak.all,list(sim.peak))}
 }
-warnings()
 
 # Plot the results
 interv<-c("No vaccine intervention",
-          "Vaccination started at t = 0",
-          "Vaccination started at t = 10")
+          paste("Vaccination started at t =",vacc.start.T[2]),
+          paste("Vaccination started at t =",vacc.start.T[3]))
 
 png(file="PeakT.01.png",width=623,height=600)
 par(mfrow=c(3,1))
@@ -68,6 +72,19 @@ for (k in 1:3){
        xlab="Peak of epidemic")
 }
 dev.off()
+
+png(file="PeakI.01.png",width=623,height=600)
+par(mfrow=c(3,1))
+for (k in 1:3){
+  hist(sim.peak.all[[k]]$I,breaks=100,
+       xlim=c(0,max(sim.peak.all[[1]]$I)),
+       main=interv[k],
+       ylab="Simulations",
+       xlab="Infected at peak")
+}
+dev.off()
+
+
 
 png(file="MaxT.01.png",width=623,height=600)
 par(mfrow=c(3,1))
@@ -167,4 +184,31 @@ for(k in 1:3){
 }
 dev.off()
 
+png(file="Scatter.02.png",width=623,height=600)
+par(mfrow=c(3,1))
+for (k in 1:3){
+  with(sim.peak.all[[k]],
+       plot(time,I,
+            ylim=c(0,max(sim.peak.all[[1]]$I)),
+            xlim=c(0,max(sim.peak.all[[1]]$time)),
+            main=interv[k],
+            ylab="Infected at peak",
+            xlab="Time of peak")
+  )
+}
+dev.off()
 
+head(sim.peak.all[[1]])
+k<-3
+def.outb<-20
+# Total infected
+mean(sim.peak.all[[k]]$cum.I[sim.peak.all[[k]]$cum.I>def.outb]/1000)
+sd(sim.peak.all[[k]]$cum.I[sim.peak.all[[k]]$cum.I>def.outb]/1000)
+# Peak infected
+mean(sim.peak.all[[k]]$I[sim.peak.all[[k]]$cum.I>def.outb]/1000)
+sd(sim.peak.all[[k]]$I[sim.peak.all[[k]]$cum.I>def.outb]/1000)
+# Peak time
+mean(sim.peak.all[[k]]$time[sim.peak.all[[k]]$cum.I>def.outb])
+sd(sim.peak.all[[k]]$time[sim.peak.all[[k]]$cum.I>def.outb])
+# P(Outbreak)
+mean(sim.peak.all[[k]]$cum.I>50)
